@@ -1,13 +1,13 @@
-from rest_framework import viewsets
-from posts.models import Post, Group, Follow, User
-from .serializers import PostSerializer, GroupSerializer, CommentSerializer, FollowSerializer
-from .permissions import IsOwnerOrReadOnly
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST
 from django.shortcuts import get_object_or_404
+from rest_framework import viewsets
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
+from posts.models import Follow, Group, Post
+
+from .permissions import IsOwnerOrReadOnly
+from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
+                          PostSerializer)
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -42,13 +42,13 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get_queryset(self):
         usr = self.request.user
+        fllwng = self.request.query_params.get('search')
+        if fllwng:
+            return Follow.objects.filter(user=usr, following__username=fllwng)
         return Follow.objects.filter(user=usr)
 
     def perform_create(self, serializer):
-    #     # follow_obj = get_object_or_404(User, username=serializer.data['following'])
-    #     # serializer.save(user=self.request.user, following=follow_obj)
         serializer.save(user=self.request.user)
